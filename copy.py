@@ -1,35 +1,44 @@
-Customer (in Spanish): Hola, buenos días. Quiero depositar este cheque, por favor.
-Banker (in English): Good morning! Let me help you with that. Do you have your account number?
-Customer (in Spanish): Sí, aquí lo tengo. ¿Cuánto tiempo tomará para que el cheque se refleje en mi cuenta?
-Banker (in English): It usually takes about 2 to 3 business days for the check to clear and the funds to be available in your account.
-Customer (in Spanish): Entiendo, gracias. ¿Necesito algún recibo de esta transacción?
-Banker (in English): Yes, I will give you a receipt with the transaction details and the expected date for the funds to be available.
-Customer (in Spanish): Excelente, eso sería todo entonces. Muchas gracias por tu ayuda.
-Banker (in English): You're welcome! If you have any other questions or need further assistance, feel free to ask. Have a great day!
+from datetime import datetime as time
+from transformers import pipeline
+from flask import Flask, request, jsonify
+from flask_ngrok import run_with_ngrok
 
+app = Flask(__name__)
+from flask_ngrok import run_with_ngrok
 
-import subprocess
+# Initialize the translation model and tokenizer
+translator = pipeline("translation_en_to_es", model="Helsinki-NLP/opus-mt-en-es") #, device=0)
 
-def speak_line(line):
-    """Speaks a line of text using the macOS 'say' command."""
-    subprocess.call(['say', line])
-
-def main(file_path):
-    """Reads a file and speaks each line, waiting for user confirmation."""
+@app.route('/translate', methods=['POST'])
+def translate_text():
+    # Get the text from the request JSON
+    data = request.get_json(force=True)
+    text = data.get("text")
+    
+    # Check if text was provided
+    if not text:
+        return jsonify({"error": "No text provided for translation."}), 400
+    
     try:
-        with open(file_path, 'r') as file:
-            for line in file:
-                line = line.strip()  # Remove any leading/trailing whitespace
-                if line:  # Check if line is not empty
-                    line = line[ line.index(':'):  ]
-                    speak_line(line)
-                    input("Press [ENTER] to continue to the next line... or CTRL+C to exit.")
-    except FileNotFoundError:
-        print(f"The file '{file_path}' was not found.")
+        # Translate the text
+        prevTime = time.now()
+        translation = translator(text, max_length=512)
+        translated_text = translation[0]['translation_text']
+        print(f"translation over, time: {time.now() - prevTime}")
+
+        return jsonify({"translated_text": translated_text}), 200
     except Exception as e:
-        print(f"An error occurred: {e}")
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    file_path = "/Users/sureshreddy/code/voiceversa/input.txt"
-    main(file_path)
+# if __name__ == '__main__':
+#     app.run(debug=True)
+    
+    
+from threading import Thread
 
+def run_app():
+    app.run()
+
+Thread(target=run_app).start()
+    
+# input_text = "Our customer can only communicate in Spanish. If you prefer talking in English please you speak now but don't be long. It would be translated to Spanish and played back to the banker. Our customer can only communicate in Spanish. If you prefer talking in English please you speak now but don't be long. It would be translated to Spanish and played back to the banker. Our customer can only communicate in Spanish. If you prefer talking in English please you speak now but don't be long. It would be translated to Spanish and played back to the banker."
