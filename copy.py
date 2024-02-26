@@ -1,16 +1,35 @@
+Customer (in Spanish): Hola, buenos días. Quiero depositar este cheque, por favor.
+Banker (in English): Good morning! Let me help you with that. Do you have your account number?
+Customer (in Spanish): Sí, aquí lo tengo. ¿Cuánto tiempo tomará para que el cheque se refleje en mi cuenta?
+Banker (in English): It usually takes about 2 to 3 business days for the check to clear and the funds to be available in your account.
+Customer (in Spanish): Entiendo, gracias. ¿Necesito algún recibo de esta transacción?
+Banker (in English): Yes, I will give you a receipt with the transaction details and the expected date for the funds to be available.
+Customer (in Spanish): Excelente, eso sería todo entonces. Muchas gracias por tu ayuda.
+Banker (in English): You're welcome! If you have any other questions or need further assistance, feel free to ask. Have a great day!
 
-Customer: (In English) Good morning. I'd like to open a new bank account. Can you help me with that?
-Banker: (In Spanish) Buenos días. Sí, por supuesto. ¿Qué tipo de cuenta le gustaría abrir, una cuenta corriente o una cuenta de ahorros?
-Customer: (In English) I'm sorry, I only speak English. Do you speak English?
-Banker: (In Spanish) Lo siento, hablo muy poco inglés. Pero no se preocupe, podemos usar un traductor. (The banker uses a translation app on a device to facilitate the conversation.)
-Customer: (In English, speaking slowly) I would like to open a savings account, please.
-Banker: (In Spanish, using the translation app) Entendido, una cuenta de ahorros. Necesitaré su documento de identidad, comprobante de domicilio y un depósito inicial para abrir la cuenta.
-Customer: (In English) Here are my ID and proof of address. How much is the initial deposit?
-Banker: (In Spanish, using the translation app) El depósito inicial es de cincuenta dólares.
-Customer: (In English) Perfect. Here is the fifty dollars for the deposit.
-Banker: (In Spanish) Excelente. Ahora llenaremos el formulario de apertura de cuenta. Por favor, siga mis instrucciones.
-(They proceed with filling out the account opening form together, using the translation app whenever necessary.)
-Customer: (In English) Thank you for your help. Is there anything else I need to do?
-Banker: (In Spanish) No, eso es todo. Su cuenta estará activa en 24 horas. Aquí tiene su número de cuenta y tarjeta temporal. Muchas gracias por elegir nuestro banco.
-Customer: (In English) Thank you very much. Have a great day!
-Banker: (In Spanish) Igualmente. ¡Que tenga un buen día!
+
+import subprocess
+
+def speak_line(line):
+    """Speaks a line of text using the macOS 'say' command."""
+    subprocess.call(['say', line])
+
+def main(file_path):
+    """Reads a file and speaks each line, waiting for user confirmation."""
+    try:
+        with open(file_path, 'r') as file:
+            for line in file:
+                line = line.strip()  # Remove any leading/trailing whitespace
+                if line:  # Check if line is not empty
+                    line = line[ line.index(':'):  ]
+                    speak_line(line)
+                    input("Press [ENTER] to continue to the next line... or CTRL+C to exit.")
+    except FileNotFoundError:
+        print(f"The file '{file_path}' was not found.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    file_path = "/Users/sureshreddy/code/voiceversa/input.txt"
+    main(file_path)
+
