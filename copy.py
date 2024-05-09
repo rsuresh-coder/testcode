@@ -1,44 +1,26 @@
-from datetime import datetime as time
-from transformers import pipeline
-from flask import Flask, request, jsonify
-from flask_ngrok import run_with_ngrok
+import pandas as pd
 
-app = Flask(__name__)
-from flask_ngrok import run_with_ngrok
+def find_words_in_sentence(sentence, words_to_check):
+    # Convert the sentence to lowercase to ensure case-insensitive matching
+    sentence = sentence.lower()
+    # Find and return the list of words that are present in the sentence
+    found_words = [word for word in words_to_check if word.lower() in sentence]
+    return found_words
 
-# Initialize the translation model and tokenizer
-translator = pipeline("translation_en_to_es", model="Helsinki-NLP/opus-mt-en-es") #, device=0)
+# Load the Excel file into a DataFrame
+df = pd.read_excel('input.xlsx')
 
-@app.route('/translate', methods=['POST'])
-def translate_text():
-    # Get the text from the request JSON
-    data = request.get_json(force=True)
-    text = data.get("text")
-    
-    # Check if text was provided
-    if not text:
-        return jsonify({"error": "No text provided for translation."}), 400
-    
-    try:
-        # Translate the text
-        prevTime = time.now()
-        translation = translator(text, max_length=512)
-        translated_text = translation[0]['translation_text']
-        print(f"translation over, time: {time.now() - prevTime}")
+# Define the list of words to check for
+words_to_check = ["apple", "banana", "cherry"]
 
-        return jsonify({"translated_text": translated_text}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+# Apply the find_words_in_sentence function to the 'sentence' column
+df['Found Words'] = df['sentence'].apply(find_words_in_sentence, words_to_check=words_to_check)
 
-# if __name__ == '__main__':
-#     app.run(debug=True)
-    
-    
-from threading import Thread
+# Create a new column to show whether any words were found
+df['Words Found'] = df['Found Words'].apply(lambda x: bool(x))
 
-def run_app():
-    app.run()
+# Save the modified DataFrame back to an Excel file
+df.to_excel('output.xlsx', index=False)
 
-Thread(target=run_app).start()
-    
-# input_text = "Our customer can only communicate in Spanish. If you prefer talking in English please you speak now but don't be long. It would be translated to Spanish and played back to the banker. Our customer can only communicate in Spanish. If you prefer talking in English please you speak now but don't be long. It would be translated to Spanish and played back to the banker. Our customer can only communicate in Spanish. If you prefer talking in English please you speak now but don't be long. It would be translated to Spanish and played back to the banker."
+print("Processing complete. Modified file saved.")
+
