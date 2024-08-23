@@ -1,26 +1,21 @@
-import vertexai
-from vertexai.generative_models import GenerativeModel
-  
-def generate():
-  vertexai.init(project="gen-lang-client-0259041665", location="us-central1")
-  model = GenerativeModel(
-    "gemini-1.5-flash-001",
-  )
-  responses = model.generate_content(
-      ["""what is the capital of india"""],
-      generation_config=generation_config,
-      stream=True
-  )
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import httpx
 
-  for response in responses:
-    print(response.text, end="")
+app = FastAPI()
 
+class Item(BaseModel):
+    title: str
+    description: str
 
-generation_config = {
-    "max_output_tokens": 8192,
-    "temperature": 1,
-    "top_p": 0.95,
-}
- 
+@app.post("/send-data/")
+async def send_data(item: Item):
+    url = "https://jsonplaceholder.typicode.com/posts"  # Example external API URL
+    data = item.dict()
+    headers = {'Content-Type': 'application/json'}
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=data, headers=headers)
+        if response.status_code != 201:
+            raise HTTPException(status_code=400, detail="Error sending data to external API")
+        return response.json()
 
-generate()
