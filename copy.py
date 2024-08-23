@@ -1,15 +1,26 @@
-import os
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+import vertexai
+from vertexai.generative_models import GenerativeModel
+  
+def generate():
+  vertexai.init(project="gen-lang-client-0259041665", location="us-central1")
+  model = GenerativeModel(
+    "gemini-1.5-flash-001",
+  )
+  responses = model.generate_content(
+      ["""what is the capital of india"""],
+      generation_config=generation_config,
+      stream=True
+  )
 
-# Get the token from the environment variable
-api_token = os.getenv("HUGGINGFACE_TOKEN")
+  for response in responses:
+    print(response.text, end="")
 
-# Set the model name you want to download
-model_name = "bert-base-uncased"
 
-# Download the model and tokenizer
-model = AutoModelForSequenceClassification.from_pretrained(model_name, use_auth_token=api_token)
-tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=api_token)
+generation_config = {
+    "max_output_tokens": 8192,
+    "temperature": 1,
+    "top_p": 0.95,
+}
+ 
 
-# Now the model and tokenizer are downloaded and ready to use
-print("Model and tokenizer downloaded successfully!")
+generate()
