@@ -1,96 +1,101 @@
-#pip install fastapi[all] langchain
+from vertexai.preview import reasoning_engines
+from langchain_google_vertexai import ChatVertexAI
+from langchain_core.messages import HumanMessage, BaseMessage
+from langgraph.graph import END, MessageGraph
+from langchain_core.tools import tool   
+from langgraph.prebuilt import ToolNode
+from typing import Literal, List    
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import base64
-import io
-from typing import Optional
+PROJECT_ID = "gen-lang-client-0259041665"  # @param {type:"string"}
+LOCATION = "us-central1"  # @param {type:"string"}
+# STAGING_BUCKET = "gs://gen_ai_bucket_hyd"  # @param {type:"string"}
+ 
+# vertexai.init(project=PROJECT_ID, location=LOCATION) 
+#, staging_bucket=STAGING_BUCKET)
+ 
 
-# Importing Langchain loaders
-from langchain.loaders import PyPDFLoader, DocxLoader
-
-app = FastAPI()
-
-class File(BaseModel):
-    filename: str
-    content: str  # base64 encoded content
-
-@app.post("/process-file/")
-async def process_file(file: File):
-    # Decode the base64 content
-    try:
-        file_bytes = base64.b64decode(file.content)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid base64 content")
-
-    # Check file extension and process accordingly
-    if file.filename.endswith('.pdf'):
-        await process_pdf(file_bytes)
-    elif file.filename.endswith('.docx'):
-        await process_docx(file_bytes)
-    elif file.filename.endswith('.txt'):
-        process_text(file_bytes)
-    else:
-        raise HTTPException(status_code=400, detail="Unsupported file type")
-
-async def process_pdf(file_bytes: bytes):
-    pdf_loader = PyPDFLoader()
-    pdf_loader.load_from_file_obj(io.BytesIO(file_bytes))
-    for page in pdf_loader.text_pages():
-        print("PDF Page Content:", page)
-
-async def process_docx(file_bytes: bytes):
-    docx_loader = DocxLoader()
-    docx_loader.load_from_file_obj(io.BytesIO(file_bytes))
-    for page in docx_loader.text_pages():
-        print("DOCX Page Content:", page)
-
-def process_text(file_bytes: bytes):
-    text = file_bytes.decode('utf-8')
-    print("Text File Content:", text)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-
-
-#####CLIENT CODE
-
-#pip install requests
-
-
-import base64
-import requests
-
-def encode_file_to_base64(file_path):
-    """Encode file content to base64."""
-    with open(file_path, "rb") as file:
-        encoded_content = base64.b64encode(file.read()).decode('utf-8')
-    return encoded_content
-
-def send_file_to_server(file_path, url="http://localhost:8000/process-file/"):
-    """Send the base64 encoded file to the server."""
-    encoded_content = encode_file_to_base64(file_path)
-    filename = file_path.split('/')[-1]  # Extract filename from the path
-    payload = {
-        "filename": filename,
-        "content": encoded_content
+def get_product_details(product_name: str):
+    """Gathers basic details about a product."""
+    print("Returning details for ", product_name)
+    details = {
+        "smartphone": "A cutting-edge smartphone with advanced camera features and lightning-fast processing.",
+        "coffee": "A rich, aromatic blend of ethically sourced coffee beans.",
+        "shoes": "High-performance running shoes designed for comfort, support, and speed.",
+        "headphones": "Wireless headphones with advanced noise cancellation technology for immersive audio.",
+        "speaker": "A voice-controlled smart speaker that plays music, sets alarms, and controls smart home devices.",
     }
-    response = requests.post(url, json=payload)
-    return response
+    return details.get(product_name, "Product details not found.")
 
-def main():
-    file_path = input("Enter the path of the file to send: ")
-    response = send_file_to_server(file_path)
-    if response.status_code == 200:
-        print("File processed successfully!")
-        print("Response:", response.text)
+@tool
+def lookup_policy(query: str) -> str:
+    """Provides information about banking related, card related questions."""
+    # print("Received LP: ", query)
+    # docs = retriever.query(query, k=2)
+    # return "\n\n".join([doc["page_content"] for doc in docs])
+    return query
+
+
+
+def router(state: List[BaseMessage]) -> Literal["get_product_details", "__end__"]:
+    """Initiates product details retrieval if the user asks for a product."""
+    # Get the tool_calls from the last message in the conversation history.
+    tool_calls = state[-1].tool_calls
+    # If there are any tool_calls
+    if len(tool_calls):
+        # print(tool_calls)
+        # Return the name of the tool to be called
+        return "get_product_details"
     else:
-        print("Failed to process file")
-        print("Status Code:", response.status_code)
-        print("Error:", response.text)
+        # End the conversation flow.
+        return "__end__"
 
-if __name__ == "__main__":
-    main()
+class SimpleLangGraphApp:
+    def __init__(self, project: str, location: str) -> None:
+        self.project_id = project
+        self.location = location
+
+    # The set_up method is used to define application initialization logic
+    def set_up(self) -> None:
+        model = ChatVertexAI(model="gemini-1.5-pro")
+
+        builder = MessageGraph()
+
+        model_with_tools = model.bind_tools([  get_product_details])
+        builder.add_node("tools", model_with_tools)
+
+        tool_node = ToolNode([get_product_details])
+        builder.add_node("get_product_details", tool_node)
+        builder.add_edge("get_product_details", END)
+
+        # tool2_node = ToolNode([lookup_policy])
+        # builder.add_node("lookup_policy", tool2_node)
+        # builder.add_edge("lookup_policy", END)
+ 
+        builder.set_entry_point("tools")
+        builder.add_conditional_edges("tools", router)
+
+        self.runnable = builder.compile()
+
+    # The query method will be used to send inputs to the agent
+    def query(self, message: str):
+        """Query the application.
+
+        Args:
+            message: The user message.
+
+        Returns:
+            str: The LLM response.
+        """
+        chat_history = self.runnable.invoke(HumanMessage(message))
+        # print(chat_history)
+
+        return chat_history[-1].content
+
+agent = SimpleLangGraphApp(project=PROJECT_ID, location=LOCATION)
+agent.set_up()
+
+print(agent.query(message="tell me about product shoes"))
+# print(agent.query(message="When will i receive my first billing statement?"))
+
+
+# print(agent.query(message="tell me about the weather"))
