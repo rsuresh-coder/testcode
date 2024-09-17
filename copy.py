@@ -1,3 +1,30 @@
+from elasticsearch import Elasticsearch
+
+# Elasticsearch cluster URL
+es_url = "https://your-elasticsearch-url:9200"  # Replace with your cluster's URL
+
+# Your API Key (Base64 encoded key in format "id:api_key")
+api_key = "your_base64_encoded_api_key_here"  # Replace with your API key
+
+# Create an Elasticsearch client instance with API Key authentication
+es = Elasticsearch(
+    es_url,
+    api_key=api_key,
+    scheme="https",  # Use "https" for secure connection
+)
+
+# Test connection
+try:
+    response = es.info()  # Get info about the Elasticsearch cluster
+    print("Connection successful!")
+    print(response)
+except Exception as e:
+    print(f"Error connecting to Elasticsearch: {e}")
+
+
+
+
+
 import tkinter as tk
 from tkinter import ttk
 
