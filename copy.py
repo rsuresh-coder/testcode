@@ -1,3 +1,61 @@
+import tkinter as tk
+from tkinter import ttk
+
+
+
+# Function to handle mic button click for source language
+def start_source_mic():
+    source_language = source_language_combo.get()
+    print(f"Starting mic for source language: {source_language}")
+
+# Function to handle mic button click for target language
+def start_target_mic():
+    target_language = target_language_combo.get()
+    print(f"Starting mic for target language: {target_language}")
+
+def on_source_language_select(event):
+    print(f"Source language selected: {source_language_combo.get()}")
+
+# Create the main application window
+root = tk.Tk()
+root.title("Language Translation")
+root.geometry("300x200")
+
+# Create a label and drop-down for source language
+source_label = tk.Label(root, text="Source Language")
+source_label.grid(row=0, column=0, padx=10, pady=5)
+
+# Dropdown (ComboBox) for source language
+source_language_combo = ttk.Combobox(root)
+source_language_combo['values'] = ["English", "Spanish", "French", "German", "Chinese", "Japanese"]
+source_language_combo.current(0)
+source_language_combo.grid(row=1, column=0, padx=10, pady=5)
+
+source_language_combo.bind("source_language_combo", on_source_language_select)
+
+# Button to start mic for source language
+source_mic_button = tk.Button(root, text="Start Mic (Source)", command=start_source_mic)
+source_mic_button.grid(row=2, column=0, padx=10, pady=10)
+
+# Create a label and drop-down for target language
+target_label = tk.Label(root, text="Target Language")
+target_label.grid(row=3, column=0, padx=10, pady=5)
+
+# Dropdown (ComboBox) for target language
+target_language_combo = ttk.Combobox(root)
+target_language_combo['values'] = ["English", "Spanish", "French", "German", "Chinese", "Japanese"]
+target_language_combo.current(0)
+target_language_combo.grid(row=4, column=0, padx=10, pady=5)
+
+# Button to start mic for target language
+target_mic_button = tk.Button(root, text="Start Mic (Target)", command=start_target_mic)
+target_mic_button.grid(row=5, column=0, padx=10, pady=10)
+
+# Start the Tkinter event loop
+root.mainloop()
+
+
+
 Decompose the 'Content' into clear and simple propositions, ensuring they are interpretable out of context. 1. Split compound sentence into simple sentences. Maintain the original phrasing from the input whenever possible. 2. For any named entity that is accompanied by additional descriptive information, separate this information into its own distinct proposition. 3. Decontextualize the proposition by adding necessary modifier to nouns or entire sentences and replacing pronouns (e.g., 'it', 'he', 'she', 'they', 'this', 'that') with the full name of the entities they refer to. 4. Present the results as a list of strings, formatted in JSON.
 
 Content: Prior to restoration work performed between 1990 and 2001, Leaning Tower of Pisa leaned at an angle of 5.5 degrees, but the tower now leans at about 3.99 degrees. This means the top of the tower is displaced horizontally 3.9 meters (12 ft 10 in) from the center.
