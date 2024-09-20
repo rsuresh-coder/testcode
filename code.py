@@ -1,3 +1,30 @@
+import pandas as pd
+
+# Read the Excel file into a DataFrame
+df = pd.read_excel("your_file.xlsx")
+
+# Initialize an empty list to store the formatted text rows
+text_rows = []
+
+# Iterate through each row in the DataFrame
+for index, row in df.iterrows():
+    # Combine all columns in the row, converting to strings and separating them with a delimiter (like a tab or space)
+    combined_row = ' | '.join([str(value) for value in row.values])
+    
+    # Append the combined row to the list
+    text_rows.append(combined_row)
+
+# Join all rows into a single text block, separated by newline characters
+text_based_table = '\n'.join(text_rows)
+
+# Print or save the text table for later use
+print(text_based_table)
+
+# Optionally, you can save the text-based table to a file
+with open("output_table.txt", "w") as f:
+    f.write(text_based_table)
+
+
 import base64
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part, SafetySetting, FinishReason
