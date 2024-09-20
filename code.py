@@ -1,3 +1,21 @@
+# Function to remove non-ASCII (Unicode) characters
+def remove_unicode(text):
+    return text.encode('ascii', 'ignore').decode()
+
+# Read the input text file
+with open('input.txt', 'r', encoding='utf-8') as file:
+    text = file.read()
+
+# Remove any Unicode characters from the text
+clean_text = remove_unicode(text)
+
+# Save the cleaned text to a new file
+with open('output.txt', 'w', encoding='ascii') as file:
+    file.write(clean_text)
+
+print("Text file saved without Unicode characters.")
+
+
 import pandas as pd
 
 # Read the Excel file into a DataFrame
