@@ -1,3 +1,49 @@
+from flask import Flask, request
+import numpy as np
+from transformers import SeamlessM4Tv2Model, AutoProcessor
+import torch
+import time
+
+app = Flask(__name__)
+
+model_name = "facebook/seamless-m4t-v2-large"
+processor = AutoProcessor.from_pretrained( model_name)  #seamless-m4t-v2-large
+model = SeamlessM4Tv2Model.from_pretrained( model_name)
+
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
+model = model.to(device)
+
+sample_rate  = 16_000
+ 
+@app.route('/translate', methods=['POST'])
+def translate_audio():
+
+    start_time = time.time()
+
+    data = request.get_json()
+    audio_sample = np.array(data['audio'])
+ 
+    audio_inputs = processor(audios=audio_sample, sampling_rate=sample_rate, return_tensors="pt").to(device)
+
+    output_tokens_txt1 = model.generate(**audio_inputs, tgt_lang="cmn", generate_speech=False)
+    translated_text = processor.decode(output_tokens_txt1[0].tolist()[0], skip_special_tokens=True)
+    current_time = time.time()
+    
+    print("Time taken: ", current_time - start_time)
+    print(translated_text)
+
+
+    # Here you can add your translation logic using the audio data
+    # For now, we'll just return the received audio data
+    return {'Translated Text: ': translated_text}
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+
+
+
 Abstract:
 Large language models (LLMs) like GPT and BERT require immense computational power to train and operate efficiently. In this talk, we’ll explore why GPUs outperform CPUs for LLMs by leveraging their parallel processing capabilities. We’ll examine how GPUs accelerate the complex matrix operations and data handling these models rely on, leading to faster training and better scalability.
 
